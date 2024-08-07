@@ -144,17 +144,25 @@ class character():
             self.position["top"] = 0
             self.y_speed = 0
         #verifica che il personaggio non esca dai limiti inferiori dello schermo
-        elif self.position["bottom"] > self.screen_dimension[1]:
-            self.position["top"] = self.screen_dimension[1] - (self.texture_dimension[1])
-            self.y_speed = 0
-            self.current_texture = "idle"
+        elif self.position["bottom"] >= self.screen_dimension[1]:
+            self.position["top"] = self.screen_dimension[1] - self.texture_dimension[1]
+            if not self.jumps[3]:#se non si sta facendo un salto la velocità è 0, in caso contrario non è modificata
+                self.y_speed = 0
+                self.jumps[1] = self.jumps[0]
+                self.jumps[3] = False
+                self.current_texture = "idle"
+                self.dash[0] = False
             
-            #resetta i salti
+            if self.jumps[3]:
+                self.jumps[1] = self.jumps[0]
+                self.jumps[1] -= 1
+                self.jumps[3] = False
+
+            #resetta il numero di salti e sprint possibili
+            self.sprint[1] = self.sprint[0]
             self.jumps[3] = False
             self.jumps[1] = self.jumps[0]
             
-            #resetta le sprint
-            self.sprint[1] = self.sprint[0]
     
     def move(self):
         #fa muovere verticalmente il personaggio
@@ -418,7 +426,23 @@ class character():
             self.dash[3] = (self.rect.center)
             return message, energy_use
         return "", 0
-            
+    
+    def reset(self):
+        #resetta le variabili del personaggio
+        self.score = [0, 0, 0]
+        self.movements = [False, False]
+        self.x_speed = [3, 3, 6]
+        self.y_speed = 0
+        
+        self.sprint = [1, 0, 2, False, 3]
+        self.jumps = [4, 4, 4, False, -3, -6]
+        
+        self.attack_range = [15, 15, 50]
+        self.dash = [False, [], pygame.Rect(0, 0, 0, 0), [], pygame.Rect(0, 0, 0, 0), 120, 200]
+        
+        self.position = {"left": (self.screen_dimension[0]/2) - (self.texture_dimension[0]/2), "top": self.screen_dimension[1] - self.texture_dimension[1] -10}
+        self.update_position()
+        
 
 class Platform():
     def __init__(self, texture:str) -> None:
