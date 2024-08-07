@@ -17,8 +17,6 @@ MODIFICHE 03-08-24:         aggiunta power-up e messaggio di ottenimento power-u
 MODIFICHE 04-08-24 \V2.03/: aggiunta score
 MODIFICHE 05-08-24:         miglioramento ordine liste -salto sprint dash x_speed-, aggiunta livello massimo potenziamenti, 
                             miglioramento texture per salti 3 e 4, correzzione bug velocità di sprint
-MODIFICHE 06-08-24:         aggiunta barra energia, aggiunta funzione di consumo energia
-MODIFICHE 07-08-24:         aggiunta funzione di reset del gioco e home
 """
 
 class Game():
@@ -53,8 +51,7 @@ class Game():
         self.upgrade_message = ["", 120]#messaggio di potenziamento, ottenuto da funzioni attack() e box_aim(), [messaggio, durata]
         
         #other
-        self.energy_use = 0
-        self.game_energy = [600, 600, pygame.Rect(10, 675, 30, 40)]#energia del gioco, se raggiunge 0 il gioco termina; ogni azione consuma energia [reset, attuale, barra]
+        self.game_energy = 1000#energia del gioco, se raggiunge 0 il gioco termina; ogni azione consuma energia
         
     def box_log(self, box, process):
         if process == "creation":
@@ -74,37 +71,29 @@ class Game():
                 match event.key:
                     case pygame.K_a:#move left
                         self.character.movements[0] = True
-                        
                     case pygame.K_d:#move right
                         self.character.movements[1] = True
-                        
                     case pygame.K_SPACE:#jump
                         if self.character.jumps[1] > 0:  # verifica sia possibile saltare
                             self.character.y_speed = self.character.jumps[4]  # imposta una velocità negativa per muovere il personaggio verso l'alto
                             self.character.jumps[1] -= 1  # numero di salti possibili
                             self.character.jumps[3] = True  # indica se il personaggio sta saltando
-                            
                             #verifica se il salto è il primo o il secondo per cambiare la texture
                             if self.character.jumps[0] <= 4:
                                 if self.character.jumps[1] == int(self.character.jumps[0]/2):
                                     self.character.current_texture = "jump1"
                                     self.character.effect_texture["jump_effect"][1] = 4
-                                    self.game_energy[1] -= 10#consumo energia
                                 elif self.character.jumps[1] <= 1:
                                     self.character.current_texture = "jump2"
                                     self.character.effect_texture["jump_effect"][1] = 4
-                                    self.game_energy[1] -= 5#consumo energia
                             
                     case pygame.K_LSHIFT:#sprint
                         if True in self.character.movements and self.character.sprint[1] > 0:
                             self.character.x_speed[1] = 50  # imposta la velocità del personaggio per lo sprint
                             self.character.sprint[3] = True #flag sprint attivo
                             self.character.sprint[1] -= 1  # numero di sprint possibili -1
-                            self.game_energy[1] -= 10#consumo energia
-                            
                     case pygame.K_s:#attack
-                        self.upgrade_message[0], self.energy_use = self.character.attack(self.boxes, self.platform, self.screen)
-                        
+                        self.upgrade_message[0] = self.character.attack(self.boxes, self.platform, self.screen)
                     case pygame.K_LCTRL:#dash attack
                         self.character.dash[0] = True#durante il ciclo verrà attivato il dash automaticamente se dash[0] == True
                         
@@ -229,8 +218,6 @@ class Game():
         
         #stampa altezza
         blit_height(self)
-        
-        pygame.draw.rect(self.screen, (220, 200, 150), self.game_energy[2])#barra energia
 
     def create_x(self, piattaforme) -> list:
         # Genera le piattaforme con una distribuzione orizzontale più bilanciata
@@ -293,7 +280,6 @@ class Game():
             pygame.display.update()
             self.clock.tick(60)#set the tik per second to 60            
             self.check_events()#check the happening events
-            self.energy_count()#count the energy of the game
             
             #memorizza il messaggio di potenziamento all'inizio del ciclo
             message = self.upgrade_message.copy()
@@ -310,7 +296,7 @@ class Game():
             self.character.move()#movimento personaggio
             self.platform_spawn()#il metodo comprende anche lo spawn di box
             
-            self.upgrade_message[0], energy_use = self.character.box_aim(self.boxes, self.platform, self.screen)#auto-aim per box(funzione di attacco associata è compresa)
+            self.upgrade_message[0] = self.character.box_aim(self.boxes, self.platform, self.screen)#auto-aim per box(funzione di attacco associata è compresa)
             
             # scrittura su schermo
             if message[0] != "" and message[1] > 0:#se il messaggio di potenziamento è attivo
@@ -318,10 +304,7 @@ class Game():
                 
             self.blit_following_camera(prev_texture)
 
-            #set finali
-            self.energy_use += energy_use#aggiorna l'energia usata nel ciclo corrente
-            self.energy_count()#aggiorna l'energia del gioco
-            
+            #set finale
             #verifica il movimento del personaggio per ripristinarlo in caso di cambiamenti non volontari(see module check_collisions in Class.py\Character)
             if self.character.movements[0] != character_movement_L:
                 self.character.movements[0] = character_movement_L
@@ -331,17 +314,11 @@ class Game():
             self.character.dash[0] = False#reset del dash
 
     def energy_count(self):
-        self.game_energy[1] -= self.energy_use
-        self.energy_use = 0
-        print(self.game_energy[1])
         #conta l'energia del gioco e crea la barre dell'energia ad ogni ciclo
-        if self.game_energy[1] <= 0:
+        if self.game_energy <= 0:
             self.reset_game()
         
-        self.game_energy[2].width = self.game_energy[1]/4#aggiorna la barra dell'energia
-        
     def reset_game(self):
-        #resetta il gioco tranne il denaro generale e le statistiche
         pass
 
 Game().run_game()

@@ -291,11 +291,10 @@ class character():
         
         create_currency()
         message = create_upgrade()
-        return message, 5
+        return message
         
     def attack(self, boxes:list, platform:list, screen) -> str:
         message = ""
-        energy_use = 0
         for box in boxes:
             #verify that the box and the character are on the same y coordinate, if not it proceed in the boxes list
             if not (box.rect.top < self.rect.centery and box.rect.bottom > self.rect.centery):
@@ -309,22 +308,22 @@ class character():
             #if the character is not moving it attacks all around him
             if self.movements[0] == self.movements[1]:
                 if (in_range_right and on_the_right) or (in_range_left and on_the_left):
-                    message, energy_use = self.delete_box(boxes, box, platform, screen)
-                    return message, energy_use
+                    message = self.delete_box(boxes, box, platform, screen)
+                    return message
             
             #moving on the left
             elif self.movements[0]:
                 if in_range_left and on_the_left:
-                    message, energy_use = self.delete_box(boxes, box, platform, screen)
-                    return message, energy_use
+                    message = self.delete_box(boxes, box, platform, screen)
+                    return message
             
             #moving on the right
             elif self.movements[1]:
                 if in_range_right and on_the_right:
-                    message, energy_use = self.delete_box(boxes, box, platform, screen)
-                    return message, energy_use
+                    message = self.delete_box(boxes, box, platform, screen)
+                    return message
         
-        return message, energy_use
+        return message
 
     #the following method are used for the auto aim system for boxes
     def line_intersection(self, line1_start, line1_end, line2_start, line2_end):
@@ -365,7 +364,7 @@ class character():
     def box_aim(self, boxes:list, platform:list, screen) -> str:
         #inside the method the character will aim to the nearest box, if there is one
         if not (self.y_speed > 1 or self.y_speed < -1 or self.jumps[3]):#verify that the character is not over a platform but mid-hair
-            return "", 0
+            return ""
         
         char_x, char_y = self.rect.center#create the (x, y) coordinates of the character center
         nearer_box = [300, 0]#contiene la box alla quale mirare, se nearer_box[1] = 0 non esiste la box a qui mirare
@@ -391,16 +390,15 @@ class character():
         
         #se non c'è una box alla quale mirare chiude la funzione
         if nearer_box[1] == 0:
-            return "", 0
+            return ""
         
         nearer_box[1].is_target = True
 
         #if self.dash[0] is true the character will teleport to the target box
-        message, energy_use = self.dash_attack(boxes, nearer_box[1], platform, screen)
-        return message, energy_use
+        message = self.dash_attack(boxes, nearer_box[1], platform, screen)
+        return message
     
     def dash_attack(self, boxes:list, box, platform:list, screen) -> str:
-        energy_use = 0
         if self.dash[0]:
             #set the animation of the dash_start
             self.current_effect_texture[0], self.current_effect_texture[1] = "dash", "dash"
@@ -412,12 +410,12 @@ class character():
             self.update_position()
             self.dash[0] = False
             self.y_speed = 0
-            message, energy_use = self.delete_box(boxes, box, platform, screen)
+            message = self.delete_box(boxes, box, platform, screen)
             
             #set the animation of dash_arrival
             self.dash[3] = (self.rect.center)
-            return message, energy_use
-        return "", 0
+            return message
+        return ""
             
 
 class Platform():
