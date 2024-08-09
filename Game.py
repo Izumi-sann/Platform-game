@@ -189,7 +189,10 @@ class Game():
             text_rect = text_surface.get_rect()
             text_rect.topleft = (30, 40)
             self.screen.blit(text_surface,(self.SCREEN_WIDTH/2-10, 10))
-          
+        
+        def blit_home(self):
+            print(self.cosososone)
+        
         # aggiorna l'offset della camera
         self.update_camera()
 
@@ -206,6 +209,10 @@ class Game():
         blit_box(self)
     
         pygame.draw.rect(self.screen, (220, 200, 150), self.game_energy[2])#barra energia
+        
+        #stampa gli assets della home se necessario
+        if self.in_game == False:
+            blit_home(self)
         
         # stampa texture personaggio
         blit_characterTexture(self)

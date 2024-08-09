@@ -12,9 +12,7 @@ class Home(Game):
         #home assets
         self.shop = 0
         self.cretits_sign = 0
-        self.start_game = pygame.rect.Rect(0, 0, 0, 0)
-        
-        
+        self.start_game = pygame.rect.Rect(self.SCREEN_WIDTH, self.SCREEN_HEIGHT, 100, 100)
         
     def run_game(self):
         while self.in_game == False:
