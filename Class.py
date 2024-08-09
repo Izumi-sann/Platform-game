@@ -427,7 +427,8 @@ class character():
             return message, energy_use
         return "", 0
     
-    def reset(self):
+    def reset(self, mode:str):
+        """resetta le variabili del personaggio, può essere inpostato per preparare il personaggio ad entrare nella home oppure per iniziare la partita ("home", "game")"""
         #resetta le variabili del personaggio
         self.score = [0, 0, 0]
         self.movements = [False, False]
@@ -440,9 +441,12 @@ class character():
         self.attack_range = [15, 15, 50]
         self.dash = [False, [], pygame.Rect(0, 0, 0, 0), [], pygame.Rect(0, 0, 0, 0), 120, 200]
         
-        self.position = {"left": (self.screen_dimension[0]/2) - (self.texture_dimension[0]/2), "top": self.screen_dimension[1] - self.texture_dimension[1] -10}
+        if mode == "home":
+            self.position = {"left": (self.screen_dimension[0]/2) - (self.texture_dimension[0]/2), "top": self.screen_dimension[1] - self.texture_dimension[1] -10}
+        else:
+            self.position = {"left": (self.screen_dimension[0]/2) - (self.texture_dimension[0]/2), "top": 50 - self.texture_dimension[1]}
+                
         self.update_position()
-        
 
 class Platform():
     def __init__(self, texture:str) -> None:

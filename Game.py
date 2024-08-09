@@ -4,40 +4,22 @@ import sys
 import random
 from Class import *
 
-"""DEV LOG, GAME VERSIONS (iniziato a metà dello sviluppo del progetto)
-MODIFICHE 25-07-24 \V2.01/: migliorata funzione Character.attak() - aggiunta metodo Character.delete_box() -; 
-                            migliorie al processo di rimozione di box dalla lista Game.boxes e dal parametro Platform.box_there.
-MODIFICHE 26-07-24 \V2.02/: Aggiunta funzione di auto-aim per box, aggiunta assets puntatore.
-MODIFICHE 27-07-24:         aggiunta animazione jump1
-MODIFICHE 29-07-24:         upgrade dell'algoritmo di cambiamento texture, aggiunta animazione jump2
-MODIFICHE 30-07-24:         aggiunta attacco Dash, aggiunta animazione attacco dash
-MODIFICHE 31-07-24:         continuazione animazione attacco dash
-MODIFICHE 01-08-24:         miglioria funzione -Game.blit_following_camera-, commenti più precisi e aggiunta nuovi, aggiuti soldi
-MODIFICHE 03-08-24:         aggiunta power-up e messaggio di ottenimento power-up #mi sto per sparare in testa
-MODIFICHE 04-08-24 \V2.03/: aggiunta score
-MODIFICHE 05-08-24:         miglioramento ordine liste -salto sprint dash x_speed-, aggiunta livello massimo potenziamenti, 
-                            miglioramento texture per salti 3 e 4, correzzione bug velocità di sprint
-MODIFICHE 06-08-24:         aggiunta barra energia, aggiunta funzione di consumo energia
-MODIFICHE 07-08-24:         aggiunta repository su github(sistemati vari errori), funzione di reset del gioco e home
-"""
-
 class Game():
-    def __init__(self, width=480, height=720) -> None:
+    def __init__(self, screen_dimension, game_character:character) -> None:
         # gestione finestra
-        self.SCREEN_WIDTH = width
-        self.SCREEN_HEIGHT = height
+        self.SCREEN_WIDTH, self.SCREEN_HEIGHT = screen_dimension.copy()
         pygame.init()
-        self.screen = pygame.display.set_mode((width, height))
+        self.screen = pygame.display.set_mode((self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
         pygame.display.set_caption("Jumpy Jumpy")
         self.clock = pygame.time.Clock()
         
         self.in_game = True
-
+        
         # risorse di gioco
         self.background = pygame.image.load(r"assets\background\background_2.png")
         self.base = pygame.image.load(r"assets\background\background_base.png")
         self.money_texture = pygame.image.load(r"assets\text\money_1.png")
-        self.character = character([self.SCREEN_WIDTH, self.SCREEN_HEIGHT])
+        self.character = game_character
 
         self.platform: list[Ground] = [Ground((self.SCREEN_WIDTH/2) - 50, 50), Ground((self.SCREEN_WIDTH/2) - 100, -40)]
         self.last_layer = [-50, 1]#y min(la minore), numero piattaforme
@@ -54,7 +36,7 @@ class Game():
         self.font = pygame.font.Font(None, self.font_size)  # Usa il font predefinito di pygame
         self.upgrade_message = ["", 120]#messaggio di potenziamento, ottenuto da funzioni attack() e box_aim(), [messaggio, durata]
         
-        #other
+        #energy
         self.energy_use = 0
         self.game_energy = [100, 100, pygame.Rect(10, 675, 30, 40)]#energia del gioco, se raggiunge 0 il gioco termina; ogni azione consuma energia [reset, attuale, barra]
         
@@ -81,6 +63,7 @@ class Game():
                         self.character.movements[1] = True
                         
                     case pygame.K_SPACE:#jump
+                        energy_consume = 0
                         if self.character.jumps[1] > 0:  # verifica sia possibile saltare
                             self.character.y_speed = self.character.jumps[4]  # imposta una velocità negativa per muovere il personaggio verso l'alto
                             self.character.jumps[1] -= 1  # numero di salti possibili
@@ -91,18 +74,23 @@ class Game():
                                 if self.character.jumps[1] == int(self.character.jumps[0]/2):
                                     self.character.current_texture = "jump1"
                                     self.character.effect_texture["jump_effect"][1] = 4
-                                    self.game_energy[1] -= 10#consumo energia
+                                    
+                                    energy_consume = 10#consumo energia
                                 elif self.character.jumps[1] <= 1:
                                     self.character.current_texture = "jump2"
                                     self.character.effect_texture["jump_effect"][1] = 4
-                                    self.game_energy[1] -= 5#consumo energia
-                            
+                                    energy_consume= 5#consumo energia
+                            if self.in_game:
+                                self.game_energy[1] -= energy_consume
+                                
                     case pygame.K_LSHIFT:#sprint
                         if True in self.character.movements and self.character.sprint[1] > 0:
                             self.character.x_speed[1] = 50  # imposta la velocità del personaggio per lo sprint
                             self.character.sprint[3] = True #flag sprint attivo
                             self.character.sprint[1] -= 1  # numero di sprint possibili -1
-                            self.game_energy[1] -= 10#consumo energia
+                            
+                            if self.in_game:
+                                self.game_energy[1] -= 10#consumo energia
                             
                     case pygame.K_s:#attack
                         self.upgrade_message[0], self.energy_use = self.character.attack(self.boxes, self.platform, self.screen)
@@ -195,7 +183,7 @@ class Game():
             self.screen.blit(text_surface, (self.character.position["left"] - 100, (self.SCREEN_HEIGHT / 2 - self.character.texture_dimension[1] / 2) - 50))
             self.upgrade_message[1] -= 1
         
-        def blit_height(self): 
+        def blit_score(self): 
             
             text_surface = self.font.render(f"{int(-1*(self.character.score[1]))}", True, self.text_color)
             text_rect = text_surface.get_rect()
@@ -216,6 +204,8 @@ class Game():
         
         #stampa box
         blit_box(self)
+    
+        pygame.draw.rect(self.screen, (220, 200, 150), self.game_energy[2])#barra energia
         
         # stampa texture personaggio
         blit_characterTexture(self)
@@ -226,13 +216,11 @@ class Game():
         #stampa il denaro
         blit_money(self)
         
+        #stampa altezza
+        blit_score(self)
+        
         #stampa messaggio di potenziamento
         blit_upgradeMessage(self)
-        
-        #stampa altezza
-        blit_height(self)
-        
-        pygame.draw.rect(self.screen, (220, 200, 150), self.game_energy[2])#barra energia
 
     def create_x(self, piattaforme) -> list:
         # Genera le piattaforme con una distribuzione orizzontale più bilanciata
@@ -290,8 +278,7 @@ class Game():
             self.box_log(self.boxes[-1], "creation")
 
     def run_game(self):
-        
-        while True:
+        while self.in_game:
             # set iniziale
             pygame.display.update()
             self.clock.tick(60)#set the tik per second to 60            
@@ -307,18 +294,16 @@ class Game():
             character_movement_R = self.character.movements[1]#right movement
             
             #game
-            self.character.check_collision_ground(self.platform)#verifica le collisioni con le piattaforme e la base inferiore
-            self.character.check_collision_ground(self.boxes)#verifica le collisioni con le box
-
-            self.character.move()#movimento personaggio
             self.platform_spawn()#il metodo comprende anche lo spawn di box
+    
+            self.character.check_collision_ground(self.boxes)#verifica le collisioni con le box
+            self.character.check_collision_ground(self.platform)#verifica le collisioni con le piattaforme e la base inferiore
+            self.character.move()#movimento personaggio
             
             self.upgrade_message[0], energy_use = self.character.box_aim(self.boxes, self.platform, self.screen)#auto-aim per box(funzione di attacco associata è compresa)
-            
             # scrittura su schermo
             if message[0] != "" and message[1] > 0:#se il messaggio di potenziamento è attivo
                 self.upgrade_message[0] = message[0]#ripristino del messaggio di potenziamento se non è scaduto
-                
             self.blit_following_camera(prev_texture)
 
             #set finali
@@ -333,6 +318,8 @@ class Game():
             
             self.character.dash[0] = False#reset del dash
 
+        return True
+        
     def energy_count(self):
         self.game_energy[1] -= self.energy_use
         self.energy_use = 0
@@ -353,8 +340,9 @@ class Game():
         self.y_offset = 0
         self.x_offset = 0
            
-        self.character.reset()
+        self.character.reset("home")
         self.game_energy[1] = 100
-    
-
-Game().run_game()
+        
+        self.in_game = False
+        #pygame.quit()
+        #sys.exit()
