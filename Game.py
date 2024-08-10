@@ -97,7 +97,13 @@ class Game():
                         
                     case pygame.K_LCTRL:#dash attack
                         self.character.dash[0] = True#durante il ciclo verrà attivato il dash automaticamente se dash[0] == True
-                        
+                    
+                    case pygame.K_KP_ENTER:#attiva un' azione
+                        try:
+                            self.action = True
+                        except:
+                            pass
+
             if event.type == pygame.KEYUP:
                 match event.key:
                     case pygame.K_a:#stop moving left
@@ -191,8 +197,14 @@ class Game():
             self.screen.blit(text_surface,(self.SCREEN_WIDTH/2-10, 10))
         
         def blit_home(self):
-            print(self.cosososone)
-        
+            try:
+                self.start_game[0].left = self.SCREEN_WIDTH/2 + self.x_offset
+                self.start_game[0].top = self.SCREEN_HEIGHT - self.start_game[0].height + self.y_offset
+                
+                self.screen.blit(self.start_game[1], (self.start_game[0].left, self.start_game[0].top))
+            except Exception as error:
+                print(error)
+            
         # aggiorna l'offset della camera
         self.update_camera()
 
