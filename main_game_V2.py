@@ -25,6 +25,7 @@ MODIFICHE 07-08-24:         aggiunta repository su github(sistemati vari errori)
 MODIFICHE 08-08-24 \V2.1/:  aggiunta classe Home, sistemata texture base background, 
                             aggiunto file main_game_V2 -which contaions the main game loop (game -> home -> game) and some global varaibles-
 MODIFICHE 09-08-24:         migliorato ciclo di transizione game-home
+MODIFICHE 10-08-24:         creazione texture shop - start game, 
 """
 
 
