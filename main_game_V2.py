@@ -26,6 +26,7 @@ MODIFICHE 08-08-24 \V2.1/:  aggiunta classe Home, sistemata texture base backgro
                             aggiunto file main_game_V2 -which contaions the main game loop (game -> home -> game) and some global varaibles-
 MODIFICHE 09-08-24:         migliorato ciclo di transizione game-home
 MODIFICHE 10-08-24:         creazione texture start game + funzione start game
+MODIFIHCE 11-08-24:         minori cambiamenti alla classe alla funzione start game(scrittura a schermo). fuori  casa.
 """
 
 
