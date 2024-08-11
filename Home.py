@@ -47,15 +47,20 @@ class Home(Game):
     def check_collision_assets(self):
         #check collision start game
         
-        #verifica che il personaggio si trova nei limiti orizzontali della piattaforma
-        within_horizontal_bounds = (self.character.position["right"] - 6 > self.start_game[0].left) and\
-                                    (self.character.position["left"] + 6 < self.start_game[0].right)
+            #verifica che il personaggio si trova nei limiti orizzontali della piattaforma
+            within_horizontal_bounds = (self.character.position["right"] - 6 > self.start_game[0].left) and\
+                                        (self.character.position["left"] + 6 < self.start_game[0].right)
+            
+            within_vertical_bounds = self.character.position["bottom"] > 680
+            
+            if within_horizontal_bounds and within_vertical_bounds:
+                #scrive a schermo la funzione da attivare
+                text_surface = self.font.render(f"start game", True, (95, 95, 95))
+                self.screen.blit(text_surface, (self.start_game[0].left - 20, self.SCREEN_HEIGHT - self.start_game[0].height + self.y_offset - 20))
+                self.upgrade_message[1] -= 1
+                
+                if self.action:
+                    self.in_game = True
+                    self.character.reset("game")
+                    return
         
-        within_vertical_bounds = self.character.position["bottom"] > 680
-        
-        if within_horizontal_bounds and within_vertical_bounds:
-            print(f"{self.character.position["bottom"]} > {self.start_game[0].centery}")
-            if self.action:
-                self.in_game = True
-                self.character.reset("game")
-                return
