@@ -127,6 +127,22 @@ class Game():
         if self.x_offset < -135 or self.x_offset > 135:
             self.x_offset = previus_x_offset
 
+    def update_home_positions(self) -> None:
+        try:
+            new_x = lambda x: x + self.x_offset
+            new_y = lambda tex_h: self.SCREEN_HEIGHT - tex_h + self.y_offset
+
+            #calcola le nuove posizioni degli assets nella home; 
+            #rect.top, rect.left = new_y(rect.height), new_x(spacing from 0)
+            self.start_game[0].top, self.start_game[0].left= new_y(self.start_game[0].height), new_x(self.SCREEN_WIDTH/2+100)
+            self.shops["jump"][0].top, self.shops["jumps"][0].left = new_y(self.shops["jump"][0].height), new_x(0)
+            self.shops["speed"][0].top, self.shops["speed"][0].left = new_y(self.shops["speed"][0].height), new_x(70)
+            self.shops["energy"][0].top, self.shops["energy"][0].left = new_y(self.shops["energy"][0].height), new_x(140)
+            
+            
+        except Exception as error:
+            print(error)
+
     def blit_following_camera(self, prev_char_texture) -> None:  # telecamera mobile
         #funzioni di blit:
         def blit_background(self):
@@ -198,10 +214,13 @@ class Game():
         
         def blit_home(self):
             try:
-                self.start_game[0].left = self.SCREEN_WIDTH/2 + self.x_offset
-                self.start_game[0].top = self.SCREEN_HEIGHT - self.start_game[0].height + self.y_offset
+                self.update_home_positions()#calcola le nuove posizioni degli assets nella home.
                 
+                #stampa a schermo le texture
                 self.screen.blit(self.start_game[1], (self.start_game[0].left, self.start_game[0].top))
+                self.screen.blit(self.shops["jump"][1], (self.shops["jump"][0].left, self.shops["jump"][0].top))
+                self.screen.blit(self.shops["speed"][1], (self.shops["speed"][0].left, self.shops["speed"][0].top))
+                self.screen.blit(self.shops["energy"][1], (self.shops["energy"][0].left, self.shops["energy"][0].top))
             except Exception as error:
                 print(error)
             
