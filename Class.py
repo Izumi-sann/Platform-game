@@ -21,7 +21,6 @@ class character():
         #lo score indica il punteggio del personaggio, è calcolato in base all'altezza raggiunta e alle box distrutte
         self.score = [0, 0, 0]#[piattaforme saltate, score, altezza ultimo salto]
         
-        
         #movements
         self.movements = [False, False]#sx, dx
         self.x_speed = [3, 3, 6]#[reset, corrente, massima]
@@ -29,7 +28,7 @@ class character():
         self.acceleration = 0.1#aumento velocità per ciclo (y_speed)
         
         self.sprint = [0, 0, 2, False, 3]#[reset, attuali, massimi, flag, tick(quanto dura)]
-        self.jumps = [2, 2, 4, False, -3, -6]#indica il numero di salti possibili, si resetta quando si tocca terra, [reset, attuali, max_jumps, flag, jump height, max jump height]
+        self.jumps = [2, 2, 4, False, -3, -3, -6]#indica il numero di salti possibili, si resetta quando si tocca terra, [reset, attuali, max_jumps, flag, jump height, jump_h_reset, max jump height]
         
         #attack
         self.attack_range = [15, 15, 50] #[reset, current, max]
@@ -252,7 +251,7 @@ class character():
             upgrade = random.choices(population= upgrade_chance, weights=upgrade_weights, k=1)[0]
             match upgrade:
                 case "up_jump":
-                    if self.jumps[4] > self.jumps[5]:
+                    if self.jumps[5] > self.jumps[6]:
                         self.jumps[3] -= 0.2
                         return "Jump height increased by 0.2"
                     return "Jump height already at maximum"
@@ -432,13 +431,14 @@ class character():
         #resetta le variabili del personaggio
         self.score = [0, 0, 0]
         self.movements = [False, False]
-        self.x_speed = [3, 3, 6]
+        self.x_speed[1] = self.x_speed[0]#reset valori di speed
         self.y_speed = 0
         
-        self.sprint = [1, 0, 2, False, 3]
-        self.jumps = [4, 4, 4, False, -3, -6]
+        self.sprint[1] = self.sprint[0]#reset valori di sprint
+        self.jumps[1] = self.jumps[0]#reset numero di salti
+        self.jumps[5] = self.jumps[4]
         
-        self.attack_range = [15, 15, 50]
+        self.attack_range[1] = self.attack_range[0]#reset attack range
         self.dash = [False, [], pygame.Rect(0, 0, 0, 0), [], pygame.Rect(0, 0, 0, 0), 120, 200]
         
         if mode == "home":
@@ -460,10 +460,6 @@ class Ground(Platform):
         super().__init__(texture = r"assets\object\platform_3.png")
         self.position.xy = x, y
         self.rect = pygame.Rect(self.position.x, self.position.y, self.texture_dimension[0], self.texture_dimension[1])
-
-class Rock(Platform):
-    def __init__(self) -> None:
-        super().__init__()
 
 class Destroyable():
     def __init__(self, x, y, texture_path, platform) -> None:

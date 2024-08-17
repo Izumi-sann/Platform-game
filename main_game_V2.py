@@ -28,7 +28,12 @@ MODIFICHE 09-08-24:         migliorato ciclo di transizione game-home
 MODIFICHE 10-08-24:         creazione texture start game + funzione start game
 MODIFIHCE 11-08-24:         minori cambiamenti alla classe alla funzione start game(scrittura a schermo). fuori  casa per 7 giorni.
 MODIFICHE 13-08-24:         miglioratometodo di creazione variabili shop e assets in Home -funzione set_action_vriables-, 
-                            aggiunta funzione di upgrade per salto, velocità e energia
+                            aggiunta funzione di upgrade per salto, velocità e energia.
+MODIFICHE 15-08-24:         aggiunta funzione per il blit degli assets home + funzione di update della posizione; 
+                            //TODO migliorare funzione di calcolo posizione.
+MODIIFCHE 17-08-24:         migliorata funzione blit e update assets home(TODO), migiorata funzione di check_collision_assets, 
+                            modificata variabile game_energy(aggiunto max_energy), aggiunta condizioni di upgrade massimo. 
+                            //TODO: aggiungere condizioni di costo. + animazioni di acquisizione.
 """
 
 
@@ -43,5 +48,5 @@ while cycle:
     cycle = game.run_game()#game.in_game = False
     
     home.in_game = False#in game generally means that the player is in the main game, not the home.
-    cycle = home.run_game()
-    game.game_energy[0] = home.game_energy[0]
+    cycle, energy = home.run_game()
+    game.game_energy[0] = energy

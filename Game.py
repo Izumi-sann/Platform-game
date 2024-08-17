@@ -13,8 +13,6 @@ class Game():
         pygame.display.set_caption("Jumpy Jumpy")
         self.clock = pygame.time.Clock()
         
-        self.in_game = True
-        
         # risorse di gioco
         self.background = pygame.image.load(r"assets\background\background_2.png")
         self.base = pygame.image.load(r"assets\background\background_base.png")
@@ -38,7 +36,9 @@ class Game():
         
         #energy
         self.energy_use = 0
-        self.game_energy = [100, 100, pygame.Rect(10, 675, 30, 40)]#energia del gioco, se raggiunge 0 il gioco termina; ogni azione consuma energia [reset, attuale, barra]
+        self.game_energy = [100, 100, 1000, pygame.Rect(10, 675, 30, 40)]#energia del gioco, se raggiunge 0 il gioco termina; ogni azione consuma energia [reset, attuale, barra]
+        
+        self.in_game = True
         
     def box_log(self, box, process) -> None:
         if process == "creation":
@@ -65,7 +65,7 @@ class Game():
                     case pygame.K_SPACE:#jump
                         energy_consume = 0
                         if self.character.jumps[1] > 0:  # verifica sia possibile saltare
-                            self.character.y_speed = self.character.jumps[4]  # imposta una velocità negativa per muovere il personaggio verso l'alto
+                            self.character.y_speed = self.character.jumps[5]  # imposta una velocità negativa per muovere il personaggio verso l'alto
                             self.character.jumps[1] -= 1  # numero di salti possibili
                             self.character.jumps[3] = True  # indica se il personaggio sta saltando
                             
@@ -80,7 +80,7 @@ class Game():
                                     self.character.current_texture = "jump2"
                                     self.character.effect_texture["jump_effect"][1] = 4
                                     energy_consume= 5#consumo energia
-                            if self.in_game:
+                            if type(self).__name__ == "Game":
                                 self.game_energy[1] -= energy_consume
                                 
                     case pygame.K_LSHIFT:#sprint
@@ -89,7 +89,7 @@ class Game():
                             self.character.sprint[3] = True #flag sprint attivo
                             self.character.sprint[1] -= 1  # numero di sprint possibili -1
                             
-                            if self.in_game:
+                            if type(self).__name__ == "Game":
                                 self.game_energy[1] -= 10#consumo energia
                             
                     case pygame.K_s:#attack
@@ -99,10 +99,7 @@ class Game():
                         self.character.dash[0] = True#durante il ciclo verrà attivato il dash automaticamente se dash[0] == True
                     
                     case pygame.K_KP_ENTER:#attiva un' azione
-                        try:
-                            self.action = True
-                        except:
-                            pass
+                        self.action = True
 
             if event.type == pygame.KEYUP:
                 match event.key:
@@ -128,20 +125,22 @@ class Game():
             self.x_offset = previus_x_offset
 
     def update_home_positions(self) -> None:
-        try:
-            new_x = lambda x: x + self.x_offset
             new_y = lambda tex_h: self.SCREEN_HEIGHT - tex_h + self.y_offset
+            new_x = lambda x: x + self.x_offset
 
             #calcola le nuove posizioni degli assets nella home; 
             #rect.top, rect.left = new_y(rect.height), new_x(spacing from 0)
-            self.start_game[0].top, self.start_game[0].left= new_y(self.start_game[0].height), new_x(self.SCREEN_WIDTH/2+100)
-            self.shops["jump"][0].top, self.shops["jumps"][0].left = new_y(self.shops["jump"][0].height), new_x(0)
-            self.shops["speed"][0].top, self.shops["speed"][0].left = new_y(self.shops["speed"][0].height), new_x(70)
-            self.shops["energy"][0].top, self.shops["energy"][0].left = new_y(self.shops["energy"][0].height), new_x(140)
+            self.start_game[0].top = new_y(self.start_game[0].height)
+            self.start_game[0].left = new_x(self.SCREEN_WIDTH/2+100)
             
+            self.shops["jump"][0].top = new_y(self.shops["jump"][0].height)
+            self.shops["jump"][0].left = new_x(0)
             
-        except Exception as error:
-            print(error)
+            self.shops["speed"][0].top = new_y(self.shops["speed"][0].height)
+            self.shops["speed"][0].left = new_x(70)
+            
+            self.shops["energy"][0].top = new_y(self.shops["energy"][0].height)
+            self.shops["energy"][0].left = new_x(140)
 
     def blit_following_camera(self, prev_char_texture) -> None:  # telecamera mobile
         #funzioni di blit:
@@ -176,12 +175,15 @@ class Game():
         def blit_effectTexture(self):
             self.character.update_effect_frame(update_speed=0.3, animation=0, dash= 2)#dash_inizio
             self.character.update_effect_frame(update_speed=-0.3, animation=1, dash= 4)#dash_arrivo
+            #nel blocco try catch serve per verificare se la texture dell'effetto è nella lista; 
+            #la texture è nella lista solo quando è da usare, in caso contrario non è presente e si passa al prossimo blocco.
             try:
                 self.screen.blit(self.character.effect_image[0], (self.character.dash[2].left, self.character.dash[2].top+ self.y_offset))
                 self.screen.blit(self.character.effect_image[1], (self.character.dash[4].left, self.character.dash[4].top+ self.y_offset))
-            except:
-                pass
+            except Exception as error:
+                pass#se la texture non è presente significa che non è necessaria al momento.
             
+            #effetto salto
             if self.character.jumps[1] <= 1 and self.character.effect_texture["jump_effect"][1] > 0:
                 self.screen.blit(self.character.effect_texture["jump_effect"][0], (self.character.position["left"]-9, self.SCREEN_HEIGHT / 2 + self.character.texture_dimension[1] / 2))
                 self.character.effect_texture["jump_effect"][1] -= 1
@@ -206,7 +208,6 @@ class Game():
             self.upgrade_message[1] -= 1
         
         def blit_score(self): 
-            
             text_surface = self.font.render(f"{int(-1*(self.character.score[1]))}", True, self.text_color)
             text_rect = text_surface.get_rect()
             text_rect.topleft = (30, 40)
@@ -222,7 +223,7 @@ class Game():
                 self.screen.blit(self.shops["speed"][1], (self.shops["speed"][0].left, self.shops["speed"][0].top))
                 self.screen.blit(self.shops["energy"][1], (self.shops["energy"][0].left, self.shops["energy"][0].top))
             except Exception as error:
-                print(error)
+                print("error -> line 226 Game.py", error)
             
         # aggiorna l'offset della camera
         self.update_camera()
@@ -239,10 +240,10 @@ class Game():
         #stampa box
         blit_box(self)
     
-        pygame.draw.rect(self.screen, (220, 200, 150), self.game_energy[2])#barra energia
+        pygame.draw.rect(self.screen, (220, 200, 150), self.game_energy[3])#barra energia
         
         #stampa gli assets della home se necessario
-        if self.in_game == False:
+        if type(self).__name__ == "Home":
             blit_home(self)
         
         # stampa texture personaggio
@@ -316,6 +317,7 @@ class Game():
             self.box_log(self.boxes[-1], "creation")
 
     def run_game(self) -> bool:
+        self.game_energy[1] = self.game_energy[0]
         while self.in_game:
             # set iniziale
             pygame.display.update()
@@ -355,19 +357,20 @@ class Game():
                 self.character.movements[1] = character_movement_R
             
             self.character.dash[0] = False#reset del dash
+            
+            print(self.character.x_speed, "||", self.character.sprint)
 
         return True
         
     def energy_count(self) -> None:
         self.game_energy[1] -= self.energy_use
         self.energy_use = 0
-        print(self.game_energy[1])
         #conta l'energia del gioco e crea la barre dell'energia ad ogni ciclo
         if self.game_energy[1] <= 0:
             self.reset_game()
             return
         
-        self.game_energy[2].width = self.game_energy[1]/4#aggiorna la barra dell'energia
+        self.game_energy[3].width = self.game_energy[1]/4#aggiorna la barra dell'energia
         
     def reset_game(self) -> None:
         #resetta il gioco tranne il denaro generale e le statistiche
@@ -379,6 +382,6 @@ class Game():
         self.x_offset = 0
            
         self.character.reset("home")
-        self.game_energy[1] = 100
+        self.game_energy[1] = self.game_energy[0]
         
         self.in_game = False
