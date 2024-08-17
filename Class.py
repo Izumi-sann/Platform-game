@@ -28,8 +28,8 @@ class character():
         self.y_speed = 0#velocità verticale corpo
         self.acceleration = 0.1#aumento velocità per ciclo (y_speed)
         
-        self.sprint = [1, 0, 2, False, 3]#[reset, attuali, massimi, flag, tick(quanto dura)]
-        self.jumps = [4, 4, 4, False, -3, -6]#indica il numero di salti possibili, si resetta quando si tocca terra, [reset, attuali, max_jumps, flag, jump height, max jump height]
+        self.sprint = [0, 0, 2, False, 3]#[reset, attuali, massimi, flag, tick(quanto dura)]
+        self.jumps = [2, 2, 4, False, -3, -6]#indica il numero di salti possibili, si resetta quando si tocca terra, [reset, attuali, max_jumps, flag, jump height, max jump height]
         
         #attack
         self.attack_range = [15, 15, 50] #[reset, current, max]

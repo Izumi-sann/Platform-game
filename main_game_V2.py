@@ -26,18 +26,22 @@ MODIFICHE 08-08-24 \V2.1/:  aggiunta classe Home, sistemata texture base backgro
                             aggiunto file main_game_V2 -which contaions the main game loop (game -> home -> game) and some global varaibles-
 MODIFICHE 09-08-24:         migliorato ciclo di transizione game-home
 MODIFICHE 10-08-24:         creazione texture start game + funzione start game
+MODIFIHCE 11-08-24:         minori cambiamenti alla classe alla funzione start game(scrittura a schermo). fuori  casa per 7 giorni.
+MODIFICHE 13-08-24:         miglioratometodo di creazione variabili shop e assets in Home -funzione set_action_vriables-, 
+                            aggiunta funzione di upgrade per salto, velocità e energia
 """
 
 
-SCREEN_DIMENSION = [480, 720]
-game_character = character(SCREEN_DIMENSION)
-game = Game(screen_dimension=SCREEN_DIMENSION, game_character=game_character)
-home = Home(screen_dimension=SCREEN_DIMENSION, game_character=game_character)
+SCREEN_DIMENSION:list[int]  = [480, 720]
+game_character:character    = character(SCREEN_DIMENSION)
+game:Game                   = Game(screen_dimension=SCREEN_DIMENSION, game_character=game_character)
+home:Home                   = Home(screen_dimension=SCREEN_DIMENSION, game_character=game_character)
 
-cycle = True
+cycle:bool = True
 while cycle:
     game.in_game = True
     cycle = game.run_game()#game.in_game = False
     
     home.in_game = False#in game generally means that the player is in the main game, not the home.
     cycle = home.run_game()
+    game.game_energy[0] = home.game_energy[0]

@@ -40,7 +40,7 @@ class Game():
         self.energy_use = 0
         self.game_energy = [100, 100, pygame.Rect(10, 675, 30, 40)]#energia del gioco, se raggiunge 0 il gioco termina; ogni azione consuma energia [reset, attuale, barra]
         
-    def box_log(self, box, process):
+    def box_log(self, box, process) -> None:
         if process == "creation":
             with open("box_log.txt", "a") as log:
                 log.writelines(f"created box: {self.boxes[-1]}, --list: {self.boxes} \n")
@@ -48,7 +48,7 @@ class Game():
             with open("box_log.txt", "a") as log:
                 log.writelines(f"--deleted box: {self.boxes[-1]}, --list: {self.boxes} \n")
 
-    def check_events(self):
+    def check_events(self) -> None:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -111,7 +111,7 @@ class Game():
                     case pygame.K_d:#stop moving right
                         self.character.movements[1] = False
 
-    def update_camera(self):
+    def update_camera(self) -> None:
         # Calcola l'offset verticale della camera
         new_offset = -(self.character.position["top"] + self.character.texture_dimension[1] / 2 - self.SCREEN_HEIGHT / 2)
         
@@ -127,7 +127,23 @@ class Game():
         if self.x_offset < -135 or self.x_offset > 135:
             self.x_offset = previus_x_offset
 
-    def blit_following_camera(self, prev_char_texture):  # telecamera mobile
+    def update_home_positions(self) -> None:
+        try:
+            new_x = lambda x: x + self.x_offset
+            new_y = lambda tex_h: self.SCREEN_HEIGHT - tex_h + self.y_offset
+
+            #calcola le nuove posizioni degli assets nella home; 
+            #rect.top, rect.left = new_y(rect.height), new_x(spacing from 0)
+            self.start_game[0].top, self.start_game[0].left= new_y(self.start_game[0].height), new_x(self.SCREEN_WIDTH/2+100)
+            self.shops["jump"][0].top, self.shops["jumps"][0].left = new_y(self.shops["jump"][0].height), new_x(0)
+            self.shops["speed"][0].top, self.shops["speed"][0].left = new_y(self.shops["speed"][0].height), new_x(70)
+            self.shops["energy"][0].top, self.shops["energy"][0].left = new_y(self.shops["energy"][0].height), new_x(140)
+            
+            
+        except Exception as error:
+            print(error)
+
+    def blit_following_camera(self, prev_char_texture) -> None:  # telecamera mobile
         #funzioni di blit:
         def blit_background(self):
             self.screen.fill((0, 0, 0))
@@ -198,10 +214,13 @@ class Game():
         
         def blit_home(self):
             try:
-                self.start_game[0].left = self.SCREEN_WIDTH/2 + self.x_offset
-                self.start_game[0].top = self.SCREEN_HEIGHT - self.start_game[0].height + self.y_offset
+                self.update_home_positions()#calcola le nuove posizioni degli assets nella home.
                 
+                #stampa a schermo le texture
                 self.screen.blit(self.start_game[1], (self.start_game[0].left, self.start_game[0].top))
+                self.screen.blit(self.shops["jump"][1], (self.shops["jump"][0].left, self.shops["jump"][0].top))
+                self.screen.blit(self.shops["speed"][1], (self.shops["speed"][0].left, self.shops["speed"][0].top))
+                self.screen.blit(self.shops["energy"][1], (self.shops["energy"][0].left, self.shops["energy"][0].top))
             except Exception as error:
                 print(error)
             
@@ -241,7 +260,7 @@ class Game():
         #stampa messaggio di potenziamento
         blit_upgradeMessage(self)
 
-    def create_x(self, piattaforme) -> list:
+    def create_x(self, piattaforme) -> list[int]:
         # Genera le piattaforme con una distribuzione orizzontale più bilanciata
         positions = []
         while len(positions) < piattaforme:
@@ -251,7 +270,7 @@ class Game():
         
         return positions
 
-    def platform_spawn(self):
+    def platform_spawn(self) -> None:
         # Verifica se è necessario generare un nuovo layer di piattaforme
         if self.character.position["top"] - self.SCREEN_HEIGHT/2 - 50 <= self.last_layer[0]:
             
@@ -280,7 +299,7 @@ class Game():
                 self.boxes.pop(self.boxes.index(self.platform[1].box_there[1]))#delete the box by searching the object reference
             self.platform.pop(1)#remove the platform; the first one needs to remain saved
 
-    def box_spawn(self, function:str, platform:Ground):
+    def box_spawn(self, function:str, platform:Ground) -> None:
         if function == "prob":
             #determina se creare o no il box
             spwan = random.choices([True, False], [20, 80], k=1)[0]
@@ -296,7 +315,7 @@ class Game():
             
             self.box_log(self.boxes[-1], "creation")
 
-    def run_game(self):
+    def run_game(self) -> bool:
         while self.in_game:
             # set iniziale
             pygame.display.update()
@@ -339,7 +358,7 @@ class Game():
 
         return True
         
-    def energy_count(self):
+    def energy_count(self) -> None:
         self.game_energy[1] -= self.energy_use
         self.energy_use = 0
         print(self.game_energy[1])
@@ -350,7 +369,7 @@ class Game():
         
         self.game_energy[2].width = self.game_energy[1]/4#aggiorna la barra dell'energia
         
-    def reset_game(self):
+    def reset_game(self) -> None:
         #resetta il gioco tranne il denaro generale e le statistiche
         self.platform: list[Ground] = [Ground((self.SCREEN_WIDTH/2) - 50, 50), Ground((self.SCREEN_WIDTH/2) - 100, -40)]
         self.last_layer = [-50, 1]#y min(la minore), numero piattaforme
@@ -363,5 +382,3 @@ class Game():
         self.game_energy[1] = 100
         
         self.in_game = False
-        #pygame.quit()
-        #sys.exit()
