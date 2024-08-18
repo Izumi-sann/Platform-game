@@ -1,7 +1,7 @@
 import pygame
 import math
 import random
-import sys
+from typing import Tuple
 
 class character():
     def __init__(self, screen_dimension:list) -> None:
@@ -11,34 +11,35 @@ class character():
         #character texture
         #INFORMAZIONE: LA TEXTURE DEL PERSONAGGIO è CAMBIATA NEI METODI UPDATE_FRAME, CHECK_COLLISION_GROUND, DASH_ATTACK, CHECK_EVENT! (findstr /n /i "self.current_texture" Class.py)
         self.set_texture()
-        self.texture_dimension = self.texture["idle"][0].get_size()#width, height
+        self.texture_dimension:tuple[int, int] = self.texture["idle"][0].get_size()#width, height
         
         #position
-        self.position = {"left": (self.screen_dimension[0]/2) - (self.texture_dimension[0]/2), "top": 50 - self.texture_dimension[1]}
+        self.position:dict[str, int] = {"left": (self.screen_dimension[0]/2) - (self.texture_dimension[0]/2), "top": 50 - self.texture_dimension[1]}
         self.position["right"], self.position["bottom"] = self.position["left"] + self.texture_dimension[0],  self.position["top"] + self.texture_dimension[1]
-        self.rect = pygame.Rect(self.position["left"], self.position["top"], self.texture_dimension[0], self.texture_dimension[1])
+        self.rect:pygame.Rect = pygame.Rect(self.position["left"], self.position["top"], self.texture_dimension[0], self.texture_dimension[1])
         
         #lo score indica il punteggio del personaggio, è calcolato in base all'altezza raggiunta e alle box distrutte
-        self.score = [0, 0, 0]#[piattaforme saltate, score, altezza ultimo salto]
+        self.score:list[int] = [0, 0, 0]#[piattaforme saltate, score, altezza ultimo salto]
         
         #movements
-        self.movements = [False, False]#sx, dx
-        self.x_speed = [3, 3, 6]#[reset, corrente, massima]
-        self.y_speed = 0#velocità verticale corpo
-        self.acceleration = 0.1#aumento velocità per ciclo (y_speed)
+        self.movements:list[bool] = [False, False]#sx, dx
+        self.x_speed:list[float] = [3.0, 3.0, 6]#[reset, corrente, massima]
+        self.y_speed:float = 0.0#velocità verticale corpo
+        self.acceleration:float = 0.1#aumento velocità per ciclo (y_speed)
         
-        self.sprint = [0, 0, 2, False, 3]#[reset, attuali, massimi, flag, tick(quanto dura)]
-        self.jumps = [2, 2, 4, False, -3, -3, -6]#indica il numero di salti possibili, si resetta quando si tocca terra, [reset, attuali, max_jumps, flag, jump height, jump_h_reset, max jump height]
+        self.sprint:list = [0, 0, 2, False, 3]#[reset, attuali, massimi, flag, tick(quanto dura)]
+        self.jumps:list = [2, 2, 4, False, -3, -3, -6, [2, 1, 2, 2, 1, 0]]#indica il numero di salti possibili, si resetta quando si tocca terra, [reset, attuali, max_jumps, flag, jump height, jump_h_reset, max jump height, jumps_texture]
+        self.jumps_texture_number:dict[int, list[int]] = {2: [2, 1], 3: [2, 1, 0], 4: [2, 2, 1, 0], 5: [2, 1, 2, 1, 0], 6: [2, 1, 2, 2, 1, 0]}
         
         #attack
-        self.attack_range = [15, 15, 50] #[reset, current, max]
-        self.dash = [False, [], pygame.Rect(0, 0, 0, 0), [], pygame.Rect(0, 0, 0, 0), 120, 200] #[flag, character center, animation center, character center 2, animation center 2, range, max range]
+        self.attack_range:list[int] = [15, 15, 50] #[reset, current, max]
+        self.dash:list = [False, [], pygame.Rect(0, 0, 0, 0), [], pygame.Rect(0, 0, 0, 0), 120, 200] #[flag, character center, animation center, character center 2, animation center 2, range, max range]
         
         #offset telecamera
-        self.y_offset = 0
+        self.y_offset:int = 0
         
         #currency management
-        self.money = 0
+        self.money:int = 0
         
     def set_texture(self):#carica e inizializza tutte le texture necessarie al personaggio
         self.texture = {"idle": [], "walking": [], "jump1": [], "jump2": [], "falling": [], "sprinting": []} #contiene tutte le texture del personaggio
@@ -82,30 +83,40 @@ class character():
     
     #viene modificato, eventualmente, il frame dei un effetto
     def update_effect_frame(self, update_speed, animation, dash) -> None:
-        if self.current_effect_texture[animation] == "none":#se l'effetto è terminato la funzione si chiude
+        #gestione dash
+        def reset_dash():
+            #quando l'effetto termina il frame viene resettato
+            if int(self.current_effect_frame[0]) >= len(self.effect_texture[self.current_effect_texture[animation]]):
+                self.current_effect_frame[0] = 0
+                self.current_effect_texture[0] = "none"
+                self.effect_image[0] = "none"
+                return
+            if int(self.current_effect_frame[1]) <= 0:
+                self.current_effect_frame[1] = 13
+                self.current_effect_texture[1] = "none"
+                self.effect_image[1] = "none"
+                return
+        
+        def set_dash_texture():
+            #se l'effetto è presente nella lista viene aggiornato il frame
+            try:#se l'effetto non è presente nella lista la funzione si chiude, in quanto non è necessario
+                self.effect_image[animation] = self.effect_texture[self.current_effect_texture[animation]][int(self.current_effect_frame[animation])]
+                self.dash[dash] = self.effect_image[animation].get_rect()
+                self.dash[dash].center = self.dash[dash-1]
+            except KeyError:
+                return
+        
+        if self.current_effect_texture[animation] == "none":#se l'effetto è terminato o non esiste la funzione si chiude
             return
         
         self.current_effect_frame[animation] += update_speed#aggiorna il frame dell'effetto
         
-        #gestisce le due istanze di dash, inizio e arrivo, la seconda va al contrario quindi termina a 0
-        if int(self.current_effect_frame[0]) >= len(self.effect_texture[self.current_effect_texture[animation]]):
-            self.current_effect_frame[0] = 0
-            self.current_effect_texture[0] = "none"
-            self.effect_image[0] = "none"
-            return
-        if int(self.current_effect_frame[1]) <= 0:
-            self.current_effect_frame[1] = 13
-            self.current_effect_texture[1] = "none"
-            self.effect_image[1] = "none"
-            return
-            
-        try:#se l'effetto non è presente nella lista la funzione si chiude, il problema si riscontra con "none"
-            self.effect_image[animation] = self.effect_texture[self.current_effect_texture[animation]][int(self.current_effect_frame[animation])]
-            self.dash[dash] = self.effect_image[animation].get_rect()
-            self.dash[dash].center = self.dash[dash-1]
-        except KeyError:
-            return
-    
+        #resetta le due istanze di dash, inizio e arrivo, la seconda va al contrario quindi termina a 0
+        reset_dash()
+        
+        #se non termina l'effetto viene aggiornato il frame
+        set_dash_texture()
+        
     def update_position(self):
         self.position["right"], self.position["bottom"] = self.position["left"] + self.texture_dimension[0],  self.position["top"] + self.texture_dimension[1]
         self.position["top"] = self.position["bottom"] - self.texture_dimension[1]
@@ -116,7 +127,7 @@ class character():
     def vertical_movement(self):
         #fa muovere verticlmente il personaggio
         if self.position["bottom"] <= self.screen_dimension[1]:
-            self.position["top"] += self.y_speed
+            self.position["top"] += self.y_speed #type: ignore
             self.y_speed += self.acceleration
     
     def horizontal_movement(self):
@@ -129,7 +140,7 @@ class character():
             self.sprint[3] = False
             self.sprint[4] = 3
         
-        self.position["left"] += (self.movements[1] - self.movements[0]) * self.x_speed[1]
+        self.position["left"] += (self.movements[1] - self.movements[0]) * self.x_speed[1] #type: ignore
     
     def check_screen_borders(self):
         #gestisce i bordi orizzontali dello schermo
@@ -162,7 +173,6 @@ class character():
             self.jumps[3] = False
             self.jumps[1] = self.jumps[0]
             
-    
     def move(self):
         #fa muovere verticalmente il personaggio
         self.vertical_movement()
@@ -237,7 +247,7 @@ class character():
                     self.sprint[1] = self.sprint[0]
 
     #delete every last bit of the box presence in the program
-    def delete_box(self, boxes:list, box, platform_list:list, screen) -> str:
+    def delete_box(self, boxes:list, box, platform_list:list, screen) -> Tuple[str, int]:
         def create_currency():
             #genera una quantità di soldi ongi volta che si distrugge una cassa
             currecny_chance = [1, 2, 3, 4, 5, 6, 7, 8, 9]#soldi che si possono ottenere
@@ -245,7 +255,7 @@ class character():
             currency_get = random.choices(population= currecny_chance, weights=currecny_weights, k=1)
             self.money += currency_get[0]#aggiunge i soldi ottenuti al totale
         
-        def create_upgrade() -> str:
+        def create_upgrade() -> str: # type: ignore
             upgrade_chance = ["up_jump", "up_speed", "up_attackRange", "up_dashRange", "up_jumpNumber", "up_sprintNumber", "nothing"]#upgrade che si possono ottenere
             upgrade_weights = [12, 11, 14, 8, 7, 7, 41]#probabilità di ottenere i soldi
             upgrade = random.choices(population= upgrade_chance, weights=upgrade_weights, k=1)[0]
@@ -258,13 +268,13 @@ class character():
                 
                 case "up_speed":
                     if self.x_speed[0] < self.x_speed[2]:
-                        self.x_speed[0] += 0.1
+                        self.x_speed[0] += 0.1 # type: ignore
                         return "Speed increased by 0.1"
                     return "Speed already at maximum"
                                     
                 case "up_attackRange":
                     if self.attack_range[1] < self.attack_range[2]:
-                        self.attack_range[1] += 1.5
+                        self.attack_range[1] += 1.5 # type: ignore
                         return "Attack range increased by 1.5"
                     return "Attack range already at maximum"
                     
@@ -277,6 +287,7 @@ class character():
                 case "up_jumpNumber":
                     if self.jumps[0] < self.jumps[2]:
                         self.jumps[0] += 1
+                        self.jumps[7] = self.jumps_texture_number[self.jumps[0]]
                         return "Jump number increased by 1"
                     return "Jump number already at maximum"
                 
@@ -298,9 +309,9 @@ class character():
         
         create_currency()
         message = create_upgrade()
-        return message, 5
+        return message, 5 # type: ignore
         
-    def attack(self, boxes:list, platform:list, screen) -> str:
+    def attack(self, boxes:list, platform:list, screen) -> Tuple[str, int]:
         message = ""
         energy_use = 0
         for box in boxes:
@@ -369,7 +380,7 @@ class character():
         
         return False
     
-    def box_aim(self, boxes:list, platform:list, screen) -> str:
+    def box_aim(self, boxes:list, platform:list, screen) -> Tuple[str, int]:
         #inside the method the character will aim to the nearest box, if there is one
         if not (self.y_speed > 1 or self.y_speed < -1 or self.jumps[3]):#verify that the character is not over a platform but mid-hair
             return "", 0
@@ -394,19 +405,19 @@ class character():
                 continue
             
             if point_distance < nearer_box[0]:
-                nearer_box[0], nearer_box[1] = point_distance, box
+                nearer_box[0], nearer_box[1] = point_distance, box #type: ignore
         
         #se non c'è una box alla quale mirare chiude la funzione
         if nearer_box[1] == 0:
             return "", 0
         
-        nearer_box[1].is_target = True
+        nearer_box[1].is_target = True #type: ignore ##wtf is this? really.
 
         #if self.dash[0] is true the character will teleport to the target box
         message, energy_use = self.dash_attack(boxes, nearer_box[1], platform, screen)
         return message, energy_use
     
-    def dash_attack(self, boxes:list, box, platform:list, screen) -> str:
+    def dash_attack(self, boxes:list, box, platform:list, screen) -> Tuple[str, int]:
         energy_use = 0
         if self.dash[0]:
             #set the animation of the dash_start
@@ -456,9 +467,9 @@ class Platform():
         self.box_there = [False, 0]
 
 class Ground(Platform):
-    def __init__(self, x, y) -> None:
+    def __init__(self, x:int, y:int) -> None:
         super().__init__(texture = r"assets\object\platform_3.png")
-        self.position.xy = x, y
+        self.position.xy = x, y #type: ignore
         self.rect = pygame.Rect(self.position.x, self.position.y, self.texture_dimension[0], self.texture_dimension[1])
 
 class Destroyable():

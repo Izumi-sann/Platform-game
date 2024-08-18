@@ -1,7 +1,4 @@
 import pygame
-import math
-import sys
-import random
 from Class import *
 from Game import Game
 from typing import Callable, Tuple
@@ -11,9 +8,9 @@ class Home(Game):
         super().__init__(screen_dimension=screen_dimension, game_character=game_character)
         
         #home assets -shops, start_game-
-        self.credits_sign:list = None #put a literal sign int the home with the credits of the game.
+        self.credits_sign:list = [] #put a literal sign int the home with the credits of the game.
 
-        self.shops:dict[str, list] = {"jump": None, "speed": None, "energy": None}
+        self.shops:dict[str, list] = {"jump": [], "speed": [], "energy": []} #shops è un dizionario che contiene le informazioni degli shop
         self.set_actions_variables()#setta gli assets delle azione, shops e start_game.
         
         self.action:bool = False #action indica se è stato attivato un comando di azione quando ci si trova sullo shop o sul start_game; è attivato da "enter", vedere check_events()
@@ -22,27 +19,27 @@ class Home(Game):
         def jump_shop(self) -> Tuple[pygame.Rect, pygame.Surface, str, Callable]:
             shop_jump_texture = pygame.image.load(r"assets\object\start_game.png")
             shop_jump_rect = shop_jump_texture.get_rect()
-            return [shop_jump_rect, shop_jump_texture, "jump shrine\nupgrade your jump", self.action_jumpShop] # [rect, texture, message, function]
+            return [shop_jump_rect, shop_jump_texture, "jump shrine\nupgrade your jump", self.action_jumpShop] # type: ignore [rect, texture, message, function] 
 
         def speed_shop(self) -> Tuple[pygame.Rect, pygame.Surface, str, Callable]:
             shop_speed_texture = pygame.image.load(r"assets\object\start_game.png")
             shop_speed_rect = shop_speed_texture.get_rect()
-            return [shop_speed_rect, shop_speed_texture, "speed shrine\nupgrade your speed", self.action_speedShop]
+            return [shop_speed_rect, shop_speed_texture, "speed shrine\nupgrade your speed", self.action_speedShop] # type: ignore [rect, texture, message, function]
 
         def energy_shop(self) -> Tuple[pygame.Rect, pygame.Surface, str, Callable]:
             shop_energy_texture = pygame.image.load(r"assets\object\start_game.png")
             shop_energy_rect = shop_energy_texture.get_rect()
-            return [shop_energy_rect, shop_energy_texture, "energy shrine\nupgrade your energy", self.action_energyShop]
+            return [shop_energy_rect, shop_energy_texture, "energy shrine\nupgrade your energy", self.action_energyShop] # type: ignore
         
         def start_game(self) -> Tuple[pygame.Rect, pygame.Surface, str, Callable]:
             start_game_texture = pygame.image.load(r"assets\object\start_game.png")
             start_game_rect = start_game_texture.get_rect()
-            return [start_game_rect, start_game_texture, "start game", self.action_startGame] # [rect, texture] 
+            return [start_game_rect, start_game_texture, "start game", self.action_startGame] # type: ignore  [rect, texture] 
 
-        self.shops["jump"] = jump_shop(self)
-        self.shops["speed"] = speed_shop(self)
-        self.shops["energy"] = energy_shop(self)
-        self.start_game = start_game(self)
+        self.shops["jump"] = jump_shop(self) #type: ignore
+        self.shops["speed"] = speed_shop(self) #type: ignore
+        self.shops["energy"] = energy_shop(self) #type: ignore
+        self.start_game = start_game(self) #type: ignore
 
     def action_startGame(self) -> None:
         self.in_game = True
@@ -54,6 +51,7 @@ class Home(Game):
         #aumenta di 1 il numero di salti iniziali
         if self.character.jumps[0] < 4:
             self.character.jumps[0] += 1
+            self.character.jumps[7] = self.character.jumps_texture_number[self.character.jumps[0]]
             #quando i salti iniziali sono al massimo aumenta i salti massimi di 2(una sola volta.)
             if self.character.jumps[0] == 4:
                 self.character.jumps[2] = 6
@@ -118,6 +116,4 @@ class Home(Game):
             #set finale
             self.action = False
             
-            print(self.character.x_speed, "||", self.character.sprint)
-        
         return True, self.game_energy[0]

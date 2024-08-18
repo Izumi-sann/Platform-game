@@ -1,8 +1,8 @@
 import pygame
-import math
 import sys
 import random
 from Class import *
+from typing import List, Union
 
 class Game():
     def __init__(self, screen_dimension, game_character:character) -> None:
@@ -32,11 +32,12 @@ class Game():
         self.text_color = (255, 255, 255)  # Bianco
         self.font_size = 25
         self.font = pygame.font.Font(None, self.font_size)  # Usa il font predefinito di pygame
-        self.upgrade_message = ["", 120]#messaggio di potenziamento, ottenuto da funzioni attack() e box_aim(), [messaggio, durata]
+        self.upgrade_message:list = ["", 120]#messaggio di potenziamento, ottenuto da funzioni attack() e box_aim(), [messaggio, durata]
         
         #energy
-        self.energy_use = 0
-        self.game_energy = [100, 100, 1000, pygame.Rect(10, 675, 30, 40)]#energia del gioco, se raggiunge 0 il gioco termina; ogni azione consuma energia [reset, attuale, barra]
+        self.game_energy:list = [100, 100, 1000, pygame.Rect(10, 675, 30, 40)]#energia del gioco, se raggiunge 0 il gioco termina; ogni azione consuma energia [reset, attuale, barra]
+        #in alcuni casi non è possibile aggiornare l'energia subito con l'azione quindi si aggiorna alla fine del ciclo con la variabile energy_use
+        self.energy_use:int = 0
         
         self.in_game = True
         
@@ -63,25 +64,25 @@ class Game():
                         self.character.movements[1] = True
                         
                     case pygame.K_SPACE:#jump
-                        energy_consume = 0
-                        if self.character.jumps[1] > 0:  # verifica sia possibile saltare
-                            self.character.y_speed = self.character.jumps[5]  # imposta una velocità negativa per muovere il personaggio verso l'alto
-                            self.character.jumps[1] -= 1  # numero di salti possibili
-                            self.character.jumps[3] = True  # indica se il personaggio sta saltando
+                        # verifica sia possibile saltare
+                        if self.character.jumps[1] > 0: 
+                            # update jumps variable
+                            self.character.y_speed = self.character.jumps[5]  # imposta una velocità negativa preimpostata jumps[5] per muovere il personaggio verso l'alto
+                            self.character.jumps[1] -= 1  # numero di salti rimanenti -1
+                            self.character.jumps[3] = True  # indica che il personaggio sta saltando
                             
-                            #verifica se il salto è il primo o il secondo per cambiare la texture
-                            if self.character.jumps[0] <= 4:
-                                if self.character.jumps[1] == int(self.character.jumps[0]/2):
-                                    self.character.current_texture = "jump1"
-                                    self.character.effect_texture["jump_effect"][1] = 4
-                                    
-                                    energy_consume = 10#consumo energia
-                                elif self.character.jumps[1] <= 1:
-                                    self.character.current_texture = "jump2"
-                                    self.character.effect_texture["jump_effect"][1] = 4
-                                    energy_consume= 5#consumo energia
-                            if type(self).__name__ == "Game":
-                                self.game_energy[1] -= energy_consume
+                            # verifica se nella sequenza di texture del salto è indicato un salto con effetto o senza
+                            # (jump2 non indica direttaente un salto con effetto, ma è correlato)
+                            # nella variabile jumps[7] è presente la sequenza di texture per i salti, jumps[1] indica i salti rimasti
+                            if self.character.jumps[7][self.character.jumps[1]] == 1:
+                                self.character.current_texture = "jump1" # imposta la texture del salto
+                                self.character.effect_texture["jump_effect"][1] = 4 # durata dell'effetto in frame
+                                self.energy_use += 5 # consumo energia
+                            
+                            elif self.character.jumps[7][self.character.jumps[1]] == 2:
+                                self.character.current_texture = "jump2"
+                                self.character.effect_texture["jump_effect"][1] = 4
+                                self.energy_use += 10# consumo energia
                                 
                     case pygame.K_LSHIFT:#sprint
                         if True in self.character.movements and self.character.sprint[1] > 0:
@@ -124,23 +125,24 @@ class Game():
         if self.x_offset < -135 or self.x_offset > 135:
             self.x_offset = previus_x_offset
 
-    def update_home_positions(self) -> None:
+    def update_home_positions(self:any) -> None: #type: ignore
+            #in questo caso self è riferito ad un oggetto di tipo Home; non è possibile specificarlo negli argomenti della funzione.
             new_y = lambda tex_h: self.SCREEN_HEIGHT - tex_h + self.y_offset
             new_x = lambda x: x + self.x_offset
 
             #calcola le nuove posizioni degli assets nella home; 
             #rect.top, rect.left = new_y(rect.height), new_x(spacing from 0)
             self.start_game[0].top = new_y(self.start_game[0].height)
-            self.start_game[0].left = new_x(self.SCREEN_WIDTH/2+100)
+            self.start_game[0].left = new_x(self.SCREEN_WIDTH/2 + 200)
             
             self.shops["jump"][0].top = new_y(self.shops["jump"][0].height)
-            self.shops["jump"][0].left = new_x(0)
+            self.shops["jump"][0].left = new_x(-100)
             
             self.shops["speed"][0].top = new_y(self.shops["speed"][0].height)
-            self.shops["speed"][0].left = new_x(70)
+            self.shops["speed"][0].left = new_x(0)
             
             self.shops["energy"][0].top = new_y(self.shops["energy"][0].height)
-            self.shops["energy"][0].left = new_x(140)
+            self.shops["energy"][0].left = new_x(100)
 
     def blit_following_camera(self, prev_char_texture) -> None:  # telecamera mobile
         #funzioni di blit:
@@ -184,10 +186,14 @@ class Game():
                 pass#se la texture non è presente significa che non è necessaria al momento.
             
             #effetto salto
-            if self.character.jumps[1] <= 1 and self.character.effect_texture["jump_effect"][1] > 0:
-                self.screen.blit(self.character.effect_texture["jump_effect"][0], (self.character.position["left"]-9, self.SCREEN_HEIGHT / 2 + self.character.texture_dimension[1] / 2))
-                self.character.effect_texture["jump_effect"][1] -= 1
-        
+            #prima di stampare l'effetto si verifica se il salto da fare è 2(salto con effetto) e se l'effetto è attivo.
+            try:
+                if self.character.jumps[7][self.character.jumps[1]] == 2 and self.character.effect_texture["jump_effect"][1] > 0:
+                    self.screen.blit(self.character.effect_texture["jump_effect"][0], (self.character.position["left"]-9, self.SCREEN_HEIGHT / 2 + self.character.texture_dimension[1] / 2))
+                    self.character.effect_texture["jump_effect"][1] -= 1
+            except IndexError:
+                pass#quando non si salta la variabile self.character.jumps[1] = 6 manda in indexerror self.character.jumps[7]. non è un errore.
+            
         def blit_money(self):
             text_surface = self.font.render(f"{self.character.money}", True, self.text_color)
             text_rect = text_surface.get_rect()
@@ -296,7 +302,7 @@ class Game():
         # Rimuove le piattaforme extra
         if len(self.platform) >= 50:#inizia a rimuovere quando il numero di piattaforme > 50
             if self.platform[1].box_there[0]:#if there's a box on the platform it proceeds to delete it
-                self.box_log(self.platform[1].box_there[1], "deletion")
+                #self.box_log(self.platform[1].box_there[1], "deletion")
                 self.boxes.pop(self.boxes.index(self.platform[1].box_there[1]))#delete the box by searching the object reference
             self.platform.pop(1)#remove the platform; the first one needs to remain saved
 
@@ -314,7 +320,7 @@ class Game():
             platform.box_there[0] = True
             platform.box_there[1] = self.boxes[-1]#a reference to the object
             
-            self.box_log(self.boxes[-1], "creation")
+            #self.box_log(self.boxes[-1], "creation")
 
     def run_game(self) -> bool:
         self.game_energy[1] = self.game_energy[0]
@@ -358,8 +364,6 @@ class Game():
             
             self.character.dash[0] = False#reset del dash
             
-            print(self.character.x_speed, "||", self.character.sprint)
-
         return True
         
     def energy_count(self) -> None:
