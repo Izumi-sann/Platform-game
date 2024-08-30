@@ -2,7 +2,6 @@
 started on june 17 2024
 
 my second ever game, after pong. a simple platformer game.
-i'm creating this game for Sorint-premio GF Marilli 'challenge'
 
 ## project details:
 
