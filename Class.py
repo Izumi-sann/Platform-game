@@ -4,7 +4,7 @@ import random
 from typing import Tuple
 
 class character():
-    def __init__(self, screen_dimension:list) -> None:
+    def __init__(self, screen_dimension:tuple) -> None:
         #screen
         self.screen_dimension = screen_dimension
         
@@ -23,13 +23,13 @@ class character():
         
         #movements
         self.movements:list[bool] = [False, False]#sx, dx
-        self.x_speed:list[float] = [3.0, 3.0, 6]#[reset, corrente, massima]
+        self.x_speed:list[float] = [3.0, 3.0, 6, 3.0]#[reset, corrente, massima, livello base] quando si resetta la partita la velocità è quella di livello base
         self.y_speed:float = 0.0#velocità verticale corpo
         self.acceleration:float = 0.1#aumento velocità per ciclo (y_speed)
         
-        self.sprint:list = [0, 0, 2, False, 3]#[reset, attuali, massimi, flag, tick(quanto dura)]
-        self.jumps:list = [2, 2, 4, False, -3, -3, -6, [2, 1, 2, 2, 1, 0]]#indica il numero di salti possibili, si resetta quando si tocca terra, [reset, attuali, max_jumps, flag, jump height, jump_h_reset, max jump height, jumps_texture]
-        self.jumps_texture_number:dict[int, list[int]] = {2: [2, 1], 3: [2, 1, 0], 4: [2, 2, 1, 0], 5: [2, 1, 2, 1, 0], 6: [2, 1, 2, 2, 1, 0]}
+        self.sprint:list = [0, 0, 2, False, 3, 0]#[reset, attuali, massimi, flag, tick(quanto dura), level]
+        self.jumps:list = [2, 2, 4, False, -3, -3, -6, [2, 1, 2, 2, 1, 0], 2]#indica il numero di salti possibili, si resetta quando si tocca terra, [reset, attuali, max_jumps, flag, jump height, jump_h_reset, max jump height, jumps_texture, level]
+        self.jumps_texture_number:dict[int, list[int]] = {2: [2, 1], 3: [2, 1, 0], 4: [2, 2, 1, 0], 5: [2, 1, 2, 1, 0], 6: [2, 1, 2, 2, 1, 0]}#sequenza di texture per i salti in base al numero di salti possibili
         
         #attack
         self.attack_range:list[int] = [15, 15, 50] #[reset, current, max]
@@ -39,7 +39,7 @@ class character():
         self.y_offset:int = 0
         
         #currency management
-        self.money:int = 0
+        self.money:int = 10000
         
     def set_texture(self):#carica e inizializza tutte le texture necessarie al personaggio
         self.texture = {"idle": [], "walking": [], "jump1": [], "jump2": [], "falling": [], "sprinting": []} #contiene tutte le texture del personaggio
@@ -247,7 +247,8 @@ class character():
                     self.sprint[1] = self.sprint[0]
 
     #delete every last bit of the box presence in the program
-    def delete_box(self, boxes:list, box, platform_list:list, screen) -> Tuple[str, int]:
+    def delete_box(self, boxes:list, box, platform_list:list) -> Tuple[str, int]:
+        """delete the box from the game, and give the player upgrades and money. contains the function create_currency() and create_upgrade()"""
         def create_currency():
             #genera una quantità di soldi ongi volta che si distrugge una cassa
             currecny_chance = [1, 2, 3, 4, 5, 6, 7, 8, 9]#soldi che si possono ottenere
@@ -262,13 +263,14 @@ class character():
             match upgrade:
                 case "up_jump":
                     if self.jumps[5] > self.jumps[6]:
-                        self.jumps[3] -= 0.2
+                        self.jumps[5] -= 0.2
                         return "Jump height increased by 0.2"
                     return "Jump height already at maximum"
                 
                 case "up_speed":
                     if self.x_speed[0] < self.x_speed[2]:
                         self.x_speed[0] += 0.1 # type: ignore
+                        self.x_speed[1] = self.x_speed[0]
                         return "Speed increased by 0.1"
                     return "Speed already at maximum"
                                     
@@ -311,7 +313,7 @@ class character():
         message = create_upgrade()
         return message, 5 # type: ignore
         
-    def attack(self, boxes:list, platform:list, screen) -> Tuple[str, int]:
+    def attack(self, boxes:list, platform:list) -> Tuple[str, int]:
         message = ""
         energy_use = 0
         for box in boxes:
@@ -327,19 +329,19 @@ class character():
             #if the character is not moving it attacks all around him
             if self.movements[0] == self.movements[1]:
                 if (in_range_right and on_the_right) or (in_range_left and on_the_left):
-                    message, energy_use = self.delete_box(boxes, box, platform, screen)
+                    message, energy_use = self.delete_box(boxes, box, platform)
                     return message, energy_use
             
             #moving on the left
             elif self.movements[0]:
                 if in_range_left and on_the_left:
-                    message, energy_use = self.delete_box(boxes, box, platform, screen)
+                    message, energy_use = self.delete_box(boxes, box, platform)
                     return message, energy_use
             
             #moving on the right
             elif self.movements[1]:
                 if in_range_right and on_the_right:
-                    message, energy_use = self.delete_box(boxes, box, platform, screen)
+                    message, energy_use = self.delete_box(boxes, box, platform)
                     return message, energy_use
         
         return message, energy_use
@@ -430,7 +432,7 @@ class character():
             self.update_position()
             self.dash[0] = False
             self.y_speed = 0
-            message, energy_use = self.delete_box(boxes, box, platform, screen)
+            message, energy_use = self.delete_box(boxes, box, platform)
             
             #set the animation of dash_arrival
             self.dash[3] = (self.rect.center)
@@ -438,24 +440,26 @@ class character():
         return "", 0
     
     def reset(self, mode:str):
-        """resetta le variabili del personaggio, può essere inpostato per preparare il personaggio ad entrare nella home oppure per iniziare la partita ("home", "game")"""
+        """resetta le variabili del personaggio, può essere impostato per preparare il personaggio ad entrare nella home oppure per iniziare la partita ("home", "game")
+            se il parametro è scorretto verrà considerato come "game" """
         #resetta le variabili del personaggio
-        self.score = [0, 0, 0]
+        #reset da esequire ad ogni cambio di schermata
         self.movements = [False, False]
-        self.x_speed[1] = self.x_speed[0]#reset valori di speed
         self.y_speed = 0
         
-        self.sprint[1] = self.sprint[0]#reset valori di sprint
-        self.jumps[1] = self.jumps[0]#reset numero di salti
+        self.x_speed[1], self.x_speed[0] = self.x_speed[3], self.x_speed[3] #reset valori di speed
+        self.sprint[1], self.sprint[0] = self.sprint[5], self.sprint[5]#reset valori di sprint al liveello base
+        self.jumps[1], self.jumps[0] = self.jumps[8], self.jumps[8]#reset numero di salti al livello base
         self.jumps[5] = self.jumps[4]
         
-        self.attack_range[1] = self.attack_range[0]#reset attack range
-        self.dash = [False, [], pygame.Rect(0, 0, 0, 0), [], pygame.Rect(0, 0, 0, 0), 120, 200]
-        
-        if mode == "home":
+        if mode == "home":#reset da fare solo se si entra nella home
             self.position = {"left": (self.screen_dimension[0]/2) - (self.texture_dimension[0]/2), "top": self.screen_dimension[1] - self.texture_dimension[1] -10}
-        else:
+            self.attack_range[1] = self.attack_range[0]#reset attack range
+         
+        else:#reset da fare se si inizia la partita
             self.position = {"left": (self.screen_dimension[0]/2) - (self.texture_dimension[0]/2), "top": 50 - self.texture_dimension[1]}
+            self.score = [0, 0, 0]
+            self.dash = [False, [], pygame.Rect(0, 0, 0, 0), [], pygame.Rect(0, 0, 0, 0), 120, 200]
                 
         self.update_position()
 

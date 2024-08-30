@@ -3,9 +3,13 @@ from Game import Game
 from Home import Home
 
 """DEV LOG, GAME VERSIONS (iniziato giorno 17-06-24). TOTALI 26 giorni di sviluppo:
-   --> stand-by dal 23/06 al 24/07 per vacanze;
-   --> stand-by dal 10/08 al 17/08 per vacanze;
-   --> stand-by dal 19/08 al 26/08 per vacanze; ...basta vacanze. vi prego. 26 giorni di sviluppo in 60+ giorni.
+   --> stand-by dal 23/06 al 24/07 per vacanze MARE;
+         -> ci ho lavorato lo stesso ma ho perso tutto il lavoro fatto.  muoio.
+   --> stand-by dal 10/08 al 17/08 per vacanze LIVIGNO;
+         -> c'è stata occasione per lavorare da webbrowser, ma non potevo testare.
+   --> stand-by dal 19/08 al 27/08 per vacanze SARDEGNA;
+         -> ...basta vacanze. vi prego. 26 giorni di sviluppo in 60+ giorni.
+         -> ritornato il 27...sfinito.
 
 MODIFICHE 25-07-24 \\V2.01/: migliorata funzione Character.attak() - aggiunta metodo Character.delete_box() -; 
                             migliorie al processo di rimozione di box dalla lista Game.boxes e dal parametro Platform.box_there.
@@ -32,15 +36,18 @@ MODIFICHE 15-08-24:         aggiunta funzione per il blit degli assets home + fu
                             //TODO migliorare funzione di calcolo posizione.
 MODIIFCHE 17-08-24:         migliorata funzione blit e update assets home(TODO), migiorata funzione di check_collision_assets, 
                             modificata variabile game_energy(aggiunto max_energy) e gestita meglio nel programma, aggiunta condizioni di upgrade massimo. 
-                            //TODO: aggiungere condizioni di costo. + animazioni di acquisizione.
+                            //TODO: aggiungere condizioni di costo. + animazione di acquisizione.
 MODIFICHE 18-08-24:         migliorata la disposizione degli assets in Home, miglioramenti minori alla funzione Game.update_effect_texture,
                             migliorata leggibilità e precisione del codice per quanto riguarda i tipi di ritorno delle funzioni.
                             migliorata la variabile character.jumps, con aggiunta di sequenza di texture per i salti -> modificata la logica di modifica texture di salto.
+MODIFICHE 28-08-24:         Aggiunte condizioni di costo per gli upgrade(TODO), aggiunta messaggio per mancanza di soldi in upgrade, aggiunto limite di upgrade.
+                            //TODO: aumeto numero soldi ottenuti da box in base al numero di soldi da parte, distribuisci a campana i soldi ottenuti, messaggio acquisizione upgrade.
+MODIFICHE 29-08-24:         migliorato limitatore degli upgrade, hot fix dei bug nella funzione di reset del personaggio(speed, jump ...)
 """
 
 
 #main game variables
-SCREEN_DIMENSION:list[int]  = [480, 720]
+SCREEN_DIMENSION:tuple[int, int]  = (480, 720)
 game_character:character    = character(SCREEN_DIMENSION)
 game:Game                   = Game(screen_dimension=SCREEN_DIMENSION, game_character=game_character)
 home:Home                   = Home(screen_dimension=SCREEN_DIMENSION, game_character=game_character)

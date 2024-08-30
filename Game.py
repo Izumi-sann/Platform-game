@@ -7,7 +7,7 @@ from typing import List, Union
 class Game():
     def __init__(self, screen_dimension, game_character:character) -> None:
         # gestione finestra
-        self.SCREEN_WIDTH, self.SCREEN_HEIGHT = screen_dimension.copy()
+        self.SCREEN_WIDTH, self.SCREEN_HEIGHT = screen_dimension[:]
         pygame.init()
         self.screen = pygame.display.set_mode((self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
         pygame.display.set_caption("Jumpy Jumpy")
@@ -17,29 +17,29 @@ class Game():
         self.background = pygame.image.load(r"assets\background\background_2.png")
         self.base = pygame.image.load(r"assets\background\background_base.png")
         self.money_texture = pygame.image.load(r"assets\text\money_1.png")
-        self.character = game_character
+        self.character:character = game_character
 
         self.platform: list[Ground] = [Ground((self.SCREEN_WIDTH/2) - 50, 50), Ground((self.SCREEN_WIDTH/2) - 100, -40)]
-        self.last_layer = [-50, 1]#y min(la minore), numero piattaforme
+        self.last_layer:list = [-50, 1]#y min(la minore), numero piattaforme
         self.boxes: list[Box] = []
-        self.box_dimension = Box(0, 0 , 0).dimension
+        self.box_dimension:tuple[int, int] = Box(0, 0 , 0).dimension
         
         # gestione offset
-        self.y_offset = 0
-        self.x_offset = 0
+        self.y_offset:int = 0
+        self.x_offset:int = 0
         
         #screen text
-        self.text_color = (255, 255, 255)  # Bianco
-        self.font_size = 25
-        self.font = pygame.font.Font(None, self.font_size)  # Usa il font predefinito di pygame
+        self.text_color:tuple[int, int, int] = (255, 255, 255)  # Bianco
+        self.font_size:int = 25
+        self.font:pygame.Font = pygame.font.Font(None, self.font_size)  # Usa il font predefinito di pygame
         self.upgrade_message:list = ["", 120]#messaggio di potenziamento, ottenuto da funzioni attack() e box_aim(), [messaggio, durata]
         
         #energy
-        self.game_energy:list = [100, 100, 1000, pygame.Rect(10, 675, 30, 40)]#energia del gioco, se raggiunge 0 il gioco termina; ogni azione consuma energia [reset, attuale, barra]
+        self.game_energy:list = [100, 100, 1000, pygame.Rect(10, 675, 30, 40)]#energia del gioco, se raggiunge 0 il gioco termina; ogni azione consuma energia [reset, attuale, max, barra]
         #in alcuni casi non è possibile aggiornare l'energia subito con l'azione quindi si aggiorna alla fine del ciclo con la variabile energy_use
         self.energy_use:int = 0
         
-        self.in_game = True
+        self.in_game:bool = True
         
     def box_log(self, box, process) -> None:
         if process == "creation":
@@ -94,7 +94,7 @@ class Game():
                                 self.game_energy[1] -= 10#consumo energia
                             
                     case pygame.K_s:#attack
-                        self.upgrade_message[0], self.energy_use = self.character.attack(self.boxes, self.platform, self.screen)
+                        self.upgrade_message[0], self.energy_use = self.character.attack(self.boxes, self.platform)
                         
                     case pygame.K_LCTRL:#dash attack
                         self.character.dash[0] = True#durante il ciclo verrà attivato il dash automaticamente se dash[0] == True
@@ -133,16 +133,16 @@ class Game():
             #calcola le nuove posizioni degli assets nella home; 
             #rect.top, rect.left = new_y(rect.height), new_x(spacing from 0)
             self.start_game[0].top = new_y(self.start_game[0].height)
-            self.start_game[0].left = new_x(self.SCREEN_WIDTH/2 + 200)
+            self.start_game[0].left = new_x(self.SCREEN_WIDTH/2 + 240)
             
             self.shops["jump"][0].top = new_y(self.shops["jump"][0].height)
-            self.shops["jump"][0].left = new_x(-100)
+            self.shops["jump"][0].left = new_x(-90)
             
             self.shops["speed"][0].top = new_y(self.shops["speed"][0].height)
-            self.shops["speed"][0].left = new_x(0)
+            self.shops["speed"][0].left = new_x(10)
             
             self.shops["energy"][0].top = new_y(self.shops["energy"][0].height)
-            self.shops["energy"][0].left = new_x(100)
+            self.shops["energy"][0].left = new_x(110)
 
     def blit_following_camera(self, prev_char_texture) -> None:  # telecamera mobile
         #funzioni di blit:
@@ -363,6 +363,8 @@ class Game():
                 self.character.movements[1] = character_movement_R
             
             self.character.dash[0] = False#reset del dash
+            
+            print(self.character.jumps)
             
         return True
         
