@@ -169,7 +169,5 @@ class Home(Game):
             
             #set finale
             self.action = False
-            
-            print(self.character.jumps)
-            
+                        
         return True, self.game_energy[0]

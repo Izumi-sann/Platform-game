@@ -2,7 +2,6 @@ import pygame
 import math
 import random
 from typing import Tuple
-
 class character():
     def __init__(self, screen_dimension:tuple) -> None:
         #screen
@@ -62,7 +61,7 @@ class character():
         self.image = self.texture["idle"][0]
         
         self.current_effect_texture = ["none", "none"]#[0] = animation1, [1] = animation2; eseguire animazioni in parallelo
-        self.current_effect_frame = [0, 13]
+        self.current_effect_frame = [0, 13]#current frame, max frame
         self.effect_image = ["none", "none"]
     
     #aggiorna le variabili di posizione del personaggio; si consiglia eseguire dopo ogni cambiamento.

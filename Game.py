@@ -363,9 +363,7 @@ class Game():
                 self.character.movements[1] = character_movement_R
             
             self.character.dash[0] = False#reset del dash
-            
-            print(self.character.jumps)
-            
+                        
         return True
         
     def energy_count(self) -> None:
