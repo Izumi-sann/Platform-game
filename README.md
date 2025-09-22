@@ -1,4 +1,4 @@
-# Yuppy Yumpy
+# Yuppy Jumpy
 
 Haoy mateys
 Here I am to ship a project once again for ya lucy sailors! (credit to arrpheus) 
